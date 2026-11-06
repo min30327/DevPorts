@@ -32,7 +32,7 @@ struct ContentView: View {
         HStack(spacing: 8) {
             Image(systemName: "network")
                 .foregroundStyle(.secondary)
-            Text("Dev Ports")
+            Text("DevPorts")
                 .font(.system(size: 15, weight: .semibold))
             Text("\(monitor.servers.count)")
                 .font(.system(size: 12, weight: .bold).monospacedDigit())
@@ -117,6 +117,7 @@ struct ContentView: View {
                           systemImage: "stop.circle")
                 }
                 .buttonStyle(.borderless)
+                .focusable(false)
                 .foregroundStyle(confirmStopAll ? .red : .secondary)
             }
             Spacer()
@@ -127,6 +128,7 @@ struct ContentView: View {
             }
             Button("終了") { NSApplication.shared.terminate(nil) }
                 .buttonStyle(.borderless)
+                .focusable(false)
                 .foregroundStyle(.secondary)
                 .keyboardShortcut("q")
         }
@@ -172,6 +174,7 @@ struct ServerRow: View {
                                 .foregroundStyle(server.framework.color == .primary ? Color.primary : server.framework.color)
                         }
                         .buttonStyle(.plain)
+                        .focusable(false)
                         .help("http://localhost:\(String(port)) を開く")
                     }
                     Text("PID \(String(server.pid))")
@@ -234,8 +237,18 @@ struct FrameworkBadge: View {
     let framework: Framework
 
     var body: some View {
-        Text(framework.badge)
-            .font(.system(size: 14, weight: .bold, design: .rounded))
+        Group {
+            if let logo = BrandIcons.image(for: framework) {
+                Image(nsImage: logo)
+                    .renderingMode(.template)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 18, height: 18)
+            } else {
+                Text(framework.badge)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+            }
+        }
             .foregroundStyle(framework.color == .primary ? Color.primary : framework.color)
             .frame(width: 34, height: 34)
             .background(framework.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 7))
@@ -260,6 +273,7 @@ struct IconButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .focusable(false)
         .help(help)
         .onHover { hovering = $0 }
     }
@@ -300,6 +314,18 @@ struct SettingsPanel: View {
                 .frame(width: 220)
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                Text("メニューバーのアイコン").font(.system(size: 12)).foregroundStyle(.secondary)
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: 4), count: 8),
+                          alignment: .leading, spacing: 4) {
+                    ForEach(PortMonitor.symbolChoices, id: \.self) { name in
+                        SymbolChoice(name: name, selected: monitor.menuBarSymbol == name) {
+                            monitor.menuBarSymbol = name
+                        }
+                    }
+                }
+            }
+
             Toggle("macOS のシステムプロセスを隠す", isOn: $monitor.hideSystemProcesses)
                 .font(.system(size: 12))
             Toggle("ログイン時に起動", isOn: Binding(
@@ -321,5 +347,30 @@ struct SettingsPanel: View {
             return
         }
         monitor.portRangesText = rangesDraft
+    }
+}
+
+struct SymbolChoice: View {
+    let name: String
+    let selected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: name)
+                .font(.system(size: 14))
+                .frame(width: 30, height: 28)
+                .foregroundStyle(selected ? Color.white : Color.primary)
+                .background(
+                    selected ? Color.accentColor : (hovering ? Color.primary.opacity(0.1) : .clear),
+                    in: RoundedRectangle(cornerRadius: 6)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help(name)
+        .onHover { hovering = $0 }
     }
 }

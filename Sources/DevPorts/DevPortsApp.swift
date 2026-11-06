@@ -17,6 +17,28 @@ struct DevPortsApp: App {
             }
             exit(0)
         }
+        // デバッグ用: `DevPorts --snapshot out.png` でポップオーバーの内容を PNG に書き出して終了
+        if let i = CommandLine.arguments.firstIndex(of: "--snapshot"), i + 1 < CommandLine.arguments.count {
+            MainActor.assumeIsolated { Self.snapshot(to: CommandLine.arguments[i + 1]) }
+            exit(0)
+        }
+    }
+
+    @MainActor
+    private static func snapshot(to path: String) {
+        let monitor = PortMonitor()
+        let deadline = Date().addingTimeInterval(5)
+        while monitor.lastUpdated == nil && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+        let renderer = ImageRenderer(content: ContentView().environmentObject(monitor)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        renderer.scale = 2
+        guard let cg = renderer.cgImage,
+              let png = NSBitmapImageRep(cgImage: cg).representation(using: .png, properties: [:])
+        else { print("render failed"); return }
+        try? png.write(to: URL(fileURLWithPath: path))
+        print("wrote \(path)")
     }
 
     var body: some Scene {
@@ -46,11 +68,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "server.rack", accessibilityDescription: "Dev Ports")
             button.imagePosition = .imageLeading
             button.target = self
             button.action = #selector(togglePopover(_:))
         }
+
+        monitor.$menuBarSymbol
+            .removeDuplicates()
+            .sink { [weak self] name in
+                let image = NSImage(systemSymbolName: name, accessibilityDescription: "DevPorts")
+                    ?? NSImage(systemSymbolName: "server.rack", accessibilityDescription: "DevPorts")
+                image?.isTemplate = true
+                self?.statusItem.button?.image = image
+            }
+            .store(in: &cancellables)
 
         monitor.$servers
             .map(\.count)
@@ -67,7 +98,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             monitor.refresh()
             popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            if let window = popover.contentViewController?.view.window {
+                window.makeKey()
+                // 最初のボタンにキーボードフォーカスが当たらないようにする
+                window.makeFirstResponder(nil)
+            }
             NSApp.activate()
         }
     }

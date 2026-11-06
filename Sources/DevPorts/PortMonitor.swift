@@ -18,11 +18,24 @@ final class PortMonitor: ObservableObject {
     @Published var hideSystemProcesses: Bool {
         didSet { UserDefaults.standard.set(hideSystemProcesses, forKey: Keys.hideSystem); refresh() }
     }
+    /// メニューバーに表示する SF Symbol 名
+    @Published var menuBarSymbol: String {
+        didSet { UserDefaults.standard.set(menuBarSymbol, forKey: Keys.symbol) }
+    }
+
+    static let symbolChoices = [
+        "server.rack", "macwindow.on.rectangle", "network", "globe", "bolt.horizontal",
+        "antenna.radiowaves.left.and.right", "dot.radiowaves.left.and.right",
+        "point.3.connected.trianglepath.dotted", "terminal",
+        "cpu", "shippingbox", "square.stack.3d.up", "powerplug",
+        "ferry", "sailboat", "flame",
+    ]
 
     private enum Keys {
         static let ranges = "portRanges"
         static let interval = "refreshInterval"
         static let hideSystem = "hideSystemProcesses"
+        static let symbol = "menuBarSymbol"
     }
 
     private var loopTask: Task<Void, Never>?
@@ -33,6 +46,7 @@ final class PortMonitor: ObservableObject {
         portRangesText = d.string(forKey: Keys.ranges) ?? PortRanges.defaultText
         refreshInterval = d.object(forKey: Keys.interval) as? Double ?? 3
         hideSystemProcesses = d.object(forKey: Keys.hideSystem) as? Bool ?? true
+        menuBarSymbol = d.string(forKey: Keys.symbol) ?? "server.rack"
         restartLoop()
     }
 

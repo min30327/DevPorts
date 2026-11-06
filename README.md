@@ -7,7 +7,7 @@
 ## 機能
 
 - **一覧表示** — 指定したポート範囲で LISTEN しているプロセスを数秒ごとに検出
-  - フレームワーク判定（Astro / Vite / Next.js / Nuxt / Remix / SvelteKit / Storybook / Gatsby / Angular / webpack / Wrangler / Rails / Django / Python / Node など）
+  - フレームワーク判定とロゴ表示（Astro / Vite / Next.js / Nuxt / Remix / SvelteKit / Storybook / Gatsby / Angular / webpack / Wrangler / Rails / Django / Python / Node など）
   - プロジェクト名（作業ディレクトリ名）、ポート、PID、稼働時間、`dev` / `preview` などのモード
 - **操作**
   - ポートをクリックして `http://localhost:<port>` をブラウザで開く
@@ -107,5 +107,18 @@ Sources/DevPorts/
 ├── ContentView.swift   # ポップオーバーの UI
 ├── PortMonitor.swift   # 定期スキャン・停止などの状態管理
 ├── PortScanner.swift   # lsof / ps の実行と解析
-└── Models.swift        # DevServer モデル、フレームワーク判定
+├── Models.swift        # DevServer モデル、フレームワーク判定
+└── BrandIcons.swift    # フレームワークのロゴ（自動生成）
+scripts/
+└── update-brand-icons.py  # BrandIcons.swift の生成スクリプト
+```
+
+## フレームワークのロゴ
+
+ロゴは [Simple Icons](https://simpleicons.org/)（CC0 1.0）の SVG を使用しています。各ロゴは各社・各団体の商標であり、フレームワークの識別目的でのみ表示しています。ロゴのないもの（Parcel など）は頭文字のバッジで表示します。
+
+ロゴを追加・更新するには `scripts/update-brand-icons.py` の `ICONS` を編集して実行します。
+
+```bash
+python3 scripts/update-brand-icons.py
 ```
